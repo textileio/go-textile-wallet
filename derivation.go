@@ -29,19 +29,22 @@ const (
 )
 
 var (
-	ErrInvalidPath        = fmt.Errorf("invalid derivation path")
+	// ErrInvalidPath indicates an invalid key path
+	ErrInvalidPath = fmt.Errorf("invalid derivation path")
+	// ErrNoPublicDerivation indicates ed25519 public derivation is not supported
 	ErrNoPublicDerivation = fmt.Errorf("no public derivation for ed25519")
 
 	pathRegex = regexp.MustCompile("^m(/[0-9]+')+$")
 )
 
+// Key represents a derived key
 type Key struct {
 	Key       []byte
 	ChainCode []byte
 }
 
 // DeriveForPath derives key for a path in BIP-44 format and a seed.
-// Ed25119 derivation operated on hardened keys only.
+// Ed25119 derivation operates on hardened keys only.
 func DeriveForPath(path string, seed []byte) (*Key, error) {
 	if !IsValidPath(path) {
 		return nil, ErrInvalidPath
@@ -85,6 +88,7 @@ func NewMasterKey(seed []byte) (*Key, error) {
 	return key, nil
 }
 
+// Derive returns the key at the given index
 func (k *Key) Derive(i uint32) (*Key, error) {
 	// no public derivation for ed25519
 	if i < FirstHardenedIndex {

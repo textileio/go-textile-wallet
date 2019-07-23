@@ -20,25 +20,40 @@ var (
 	// provided public key
 	ErrInvalidSignature = fmt.Errorf("signature verification failed")
 
+	// ErrNoSeed is returned when attempting to access a seed when
+	// the account does not have the private key available
+	ErrNoSeed = fmt.Errorf("cannot access seed")
+
 	// ErrCannotSign is returned when attempting to sign a message when
-	// the account does not have the secret key available
+	// the account does not have the private key available
 	ErrCannotSign = fmt.Errorf("cannot sign")
 
 	// ErrCannotDecrypt is returned when attempting to decrypt a message when
-	// the account does not have the secret key available
+	// the account does not have the private key available
 	ErrCannotDecrypt = fmt.Errorf("cannot decrypt")
 )
 
 // Account is the main interface for this package
 type Account interface {
+	// Address returns a string encoded version of the public key
 	Address() string
+	// Seed returns a string encoded version of the private key
+	Seed() (string, error)
+	// Hint returns the last four bytes of the public key
 	Hint() [4]byte
-	Id() (peer.ID, error)
+	// ID returns the associated libp2p peer ID
+	ID() (peer.ID, error)
+	// LibP2PPrivKey returns the private key as a libp2p Key
 	LibP2PPrivKey() (*libp2pc.Ed25519PrivateKey, error)
+	// LibP2PPubKey returns the public key as a libp2p Key
 	LibP2PPubKey() (*libp2pc.Ed25519PublicKey, error)
-	Verify(input []byte, signature []byte) error
+	// Verify that 'sig' is the signed hash of 'input'
+	Verify(input []byte, sig []byte) error
+	// Sign input bytes
 	Sign(input []byte) ([]byte, error)
+	// Encrypt input bytes
 	Encrypt(input []byte) ([]byte, error)
+	// Decrypt input bytes
 	Decrypt(input []byte) ([]byte, error)
 }
 

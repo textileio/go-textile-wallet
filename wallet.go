@@ -7,21 +7,29 @@ import (
 	"github.com/tyler-smith/go-bip39"
 )
 
+// ErrInvalidWordCount indicates that the given word count is invalid
 var ErrInvalidWordCount = fmt.Errorf("invalid word count (must be 12, 15, 18, 21, or 24)")
 
+// WordCount represents the number of words in a mnemonic
 type WordCount int
 
 const (
-	TwelveWords     WordCount = 12
-	FifteenWords    WordCount = 15
-	EighteenWords   WordCount = 18
-	TwentyOneWords  WordCount = 21
+	// TwelveWords corresponds to an entropy size of 128
+	TwelveWords WordCount = 12
+	// FifteenWords corresponds to an entropy size of 160
+	FifteenWords WordCount = 15
+	// EighteenWords corresponds to an entropy size of 192
+	EighteenWords WordCount = 18
+	// TwentyOneWords corresponds to an entropy size of 224
+	TwentyOneWords WordCount = 21
+	// TwentyFourWords corresponds to an entropy size of 256
 	TwentyFourWords WordCount = 24
 )
 
-func NewWordCount(cnt int) (*WordCount, error) {
+// NewWordCount creates a standard word count from the given int
+func NewWordCount(count int) (*WordCount, error) {
 	var wc WordCount
-	switch cnt {
+	switch count {
 	case 12:
 		wc = TwelveWords
 	case 15:
@@ -38,6 +46,7 @@ func NewWordCount(cnt int) (*WordCount, error) {
 	return &wc, nil
 }
 
+// EntropySize returns length of the word counts random entropy bytes
 func (w WordCount) EntropySize() int {
 	switch w {
 	case TwelveWords:
@@ -62,16 +71,18 @@ type Wallet struct {
 	RecoveryPhrase string
 }
 
-func WalletFromWordCount(wordCount int) (*Wallet, error) {
+// FromWordCount creates a wallet with random entropy bytes of the bit size associated with the given word count
+func FromWordCount(wordCount int) (*Wallet, error) {
 	wcount, err := NewWordCount(wordCount)
 	if err != nil {
 		return nil, err
 	}
 
-	return WalletFromEntropy(wcount.EntropySize())
+	return FromEntropy(wcount.EntropySize())
 }
 
-func WalletFromEntropy(entropySize int) (*Wallet, error) {
+// FromMnemonic creates a wallet with random entropy bytes of the given bit size
+func FromEntropy(entropySize int) (*Wallet, error) {
 	entropy, err := bip39.NewEntropy(entropySize)
 	if err != nil {
 		return nil, err
@@ -83,13 +94,14 @@ func WalletFromEntropy(entropySize int) (*Wallet, error) {
 	return &Wallet{RecoveryPhrase: mnemonic}, nil
 }
 
-func WalletFromMnemonic(mnemonic string) *Wallet {
+// FromMnemonic creates a wallet directly from a mnemonic phrase
+func FromMnemonic(mnemonic string) *Wallet {
 	return &Wallet{RecoveryPhrase: mnemonic}
 }
 
 // To understand how this works, refer to the living document:
 // https://paper.dropbox.com/doc/Hierarchical-Deterministic-Wallets--Ae0TOjGObNq_zlyYFh7Ea0jNAQ-t7betWDTvXtK6qqD8HXKf
-func (w *Wallet) AccountAt(index int, passphrase string) (*account.Full, error) {
+func (w *Wallet) DeriveAccount(index int, passphrase string) (*account.Full, error) {
 	seed, err := bip39.NewSeedWithErrorChecking(w.RecoveryPhrase, passphrase)
 	if err != nil {
 		if err == bip39.ErrInvalidMnemonic {

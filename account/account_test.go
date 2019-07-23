@@ -32,7 +32,7 @@ var (
 
 func ItBehavesLikeAKP(subject *Account) {
 
-	// NOTE: subject will only be valid to dereference when inside am "It"
+	// NOTE: subject will only be valid to dereference when inside an "It"
 	// example.
 
 	Describe("Address()", func() {
@@ -43,7 +43,7 @@ func ItBehavesLikeAKP(subject *Account) {
 
 	Describe("Id()", func() {
 		It("returns the correct id", func() {
-			pid, err := (*subject).Id()
+			pid, err := (*subject).ID()
 			if err != nil {
 				panic(err)
 			}

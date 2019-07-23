@@ -11,24 +11,33 @@ import (
 	"golang.org/x/crypto/ed25519"
 )
 
+// Full represents a full account which can verify and sign signatures.
+//
+// NOTE: ensure the seed provided is a valid key encoded textile address.
+// Some operations will panic otherwise. It's recommended that you create these
+// structs through the Parse() method.
 type Full struct {
 	seed string
 }
 
+// Address returns a string encoded version of the public key
 func (kp *Full) Address() string {
 	return key.MustEncode(key.VersionByteAccountID, kp.publicKey()[:])
 }
 
+// Hint returns the last four bytes of the public key
 func (kp *Full) Hint() (r [4]byte) {
 	copy(r[:], kp.publicKey()[28:])
 	return
 }
 
-func (kp *Full) Seed() string {
-	return kp.seed
+// Seed returns a string encoded version of the private key
+func (kp *Full) Seed() (string, error) {
+	return kp.seed, nil
 }
 
-func (kp *Full) Id() (peer.ID, error) {
+// ID returns the associated libp2p peer ID
+func (kp *Full) ID() (peer.ID, error) {
 	pub, err := kp.LibP2PPubKey()
 	if err != nil {
 		return "", nil
@@ -36,6 +45,7 @@ func (kp *Full) Id() (peer.ID, error) {
 	return peer.IDFromPublicKey(pub)
 }
 
+// LibP2PPrivKey returns the private key as a libp2p Key
 func (kp *Full) LibP2PPrivKey() (*libp2pc.Ed25519PrivateKey, error) {
 	buf := make([]byte, ed25519.PrivateKeySize)
 	copy(buf, kp.rawSeed()[:])
@@ -53,6 +63,7 @@ func (kp *Full) LibP2PPrivKey() (*libp2pc.Ed25519PrivateKey, error) {
 	return esk, nil
 }
 
+// LibP2PPubKey returns the public key as a libp2p Key
 func (kp *Full) LibP2PPubKey() (*libp2pc.Ed25519PublicKey, error) {
 	pmes := new(pb.PublicKey)
 	pmes.Data = kp.publicKey()[:]
@@ -67,6 +78,7 @@ func (kp *Full) LibP2PPubKey() (*libp2pc.Ed25519PublicKey, error) {
 	return epk, nil
 }
 
+// Verify that 'sig' is the signed hash of 'input'
 func (kp *Full) Verify(input []byte, sig []byte) error {
 	if len(sig) != ed25519.PrivateKeySize {
 		return ErrInvalidSignature
@@ -80,11 +92,13 @@ func (kp *Full) Verify(input []byte, sig []byte) error {
 	return nil
 }
 
+// Sign input bytes
 func (kp *Full) Sign(input []byte) ([]byte, error) {
 	_, priv := kp.keys()
 	return ed25519.Sign(priv, input)[:], nil
 }
 
+// Encrypt input bytes
 func (kp *Full) Encrypt(input []byte) ([]byte, error) {
 	pub, err := kp.LibP2PPubKey()
 	if err != nil {
@@ -93,6 +107,7 @@ func (kp *Full) Encrypt(input []byte) ([]byte, error) {
 	return crypto.Encrypt(pub, input)
 }
 
+// Decrypt input bytes
 func (kp *Full) Decrypt(input []byte) ([]byte, error) {
 	priv, err := kp.LibP2PPrivKey()
 	if err != nil {
